@@ -1,52 +1,7 @@
-"""
-URL configuration for server project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path
-from backend.views import (
-    home,
-    register,
-    logout_view,
-    listing_view,
-    add_listing_view,
-    add_help_view,
-    semantic_search,
-    get_user,
-    get_users,
-    get_or_create_conversation,
-    conversation_messages,
-    send_message,
-)
+from django.urls import include, path
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', home, name="home"),
-    path("register",register,name="register"),
-    path("logout",logout_view,name="logout"),
-    path("listing",listing_view,name="listing"),
-    path("add_listing",add_listing_view,name="add_listing"),
-    path("add_help_request",add_help_view,name="add_help_request"),
-    path("search", semantic_search, name="semantic_search"),
-    path("api/get_user", get_user, name="get_user"),
-    path("api/get_users", get_users, name="get_users"),
-    path("api/conversations", get_or_create_conversation, name="get_or_create_conversation"),
-    path("api/conversations/<int:conv_id>/messages", conversation_messages, name="conversation_messages"),
-    path("api/messages", send_message, name="send_message"),
-    # add trailing slash variants for compatibility
-    path("api/conversations/", get_or_create_conversation, name="get_or_create_conversation_slash"),
-    path("api/messages/", send_message, name="send_message_slash"),
- 
+    path("admin/", admin.site.urls),
+    path("api/", include("backend.urls")),
 ]

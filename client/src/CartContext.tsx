@@ -33,7 +33,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem('cart', JSON.stringify(items));
-    } catch {}
+    } catch {
+      // Storage can be unavailable (private browsing); the cart still works in memory.
+    }
   }, [items]);
 
   const addItem = (item: Omit<CartItem, 'quantity'>, qty: number = 1) => {
@@ -65,6 +67,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCart() {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error('useCart must be used within CartProvider');

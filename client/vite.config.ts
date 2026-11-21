@@ -8,9 +8,6 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://127.0.0.1:8000',
-      '/add_help_request': 'http://127.0.0.1:8000',
-      '/register': 'http://127.0.0.1:8000',
-      '/logout': 'http://127.0.0.1:8000'
-    }
-  }
+    },
+  },
 })

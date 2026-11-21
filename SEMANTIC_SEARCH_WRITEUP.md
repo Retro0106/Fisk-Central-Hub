@@ -1,261 +1,107 @@
-# Semantic Search Implementation Writeup
+# Semantic Search and Tutor Matching
 
 ## Overview
 
-This document describes the implementation of semantic search functionality for the Bulldog Marketplace application. The feature enables users to search for products using natural language queries that understand meaning and context, rather than requiring exact keyword matches.
+Fisk Central Hub's main differentiator is intent-based search: students describe what they need in their own words, and the system finds results that match the meaning rather than exact keywords. A search for "help with calc derivatives" surfaces the Calculus I tutor even though no profile contains the word "calc."
 
-## What Was Implemented
+The same embeddings power three things:
 
-### Core Functionality
-- **Semantic Product Search**: Replaced exact substring matching with vector-based similarity search
-- **FAISS Index**: Fast approximate nearest neighbor search using Facebook AI Similarity Search
-- **Embedding Model**: Uses `sentence-transformers/all-MiniLM-L6-v2` to convert product text into dense vector representations
-- **RESTful API Endpoint**: New `/search` endpoint that accepts natural language queries
-- **Frontend Integration**: Updated React components to use semantic search when users type in the search box
+1. **Global search** across tutors, marketplace listings, organizations, and upcoming events (`GET /api/search`).
+2. **In-page search** on the Marketplace and Organizations pages.
+3. **Tutor matching**, which combines semantic similarity with structured signals (course and availability) to rank tutors for a help request.
 
-## Technologies Used
+Search began as a product-only feature in the original Bulldog Marketplace. This write-up covers how it was generalized for the full hub, and keeps the lessons from the first version.
 
-- **Python Libraries**:
-  - `sentence-transformers`: For generating embeddings from text
-  - `faiss-cpu`: For efficient similarity search on vectors
-  - `numpy`: For numerical operations and array handling
-  - `Django REST Framework`: For API endpoints
+## How it works
 
-- **Embedding Model**: `sentence-transformers/all-MiniLM-L6-v2`
-  - Lightweight, fast model optimized for semantic similarity
-  - 384-dimensional embeddings
-  - Good balance between accuracy and performance
+### Embedding model
 
-## Implementation Steps
+All text is embedded with `sentence-transformers/all-MiniLM-L6-v2`:
 
-### 1. Installation of Dependencies
+- 384-dimensional embeddings, small and fast (about 90 MB, under 100 ms per query on a laptop CPU)
+- Trained for semantic similarity, so it works well out of the box
+- Embeddings are L2-normalized, so the inner product of two vectors equals their cosine similarity
+
+The model loads lazily on the first search, not when Django starts, so commands like `migrate` stay fast. `SEARCH_MODEL_NAME` in settings can swap in a different model.
+
+### One index per content type
+
+`src/backend/search.py` keeps a registry of searchable types. Each type defines which rows to index and how to turn a row into text:
+
+| Type | Rows indexed | Text that gets embedded |
+| --- | --- | --- |
+| `listing` | Unsold listings | Title, description, category, condition, color |
+| `tutor` | Active tutor profiles | "Tutor for MATH 131 Calculus I, ...", topics, major, bio |
+| `organization` | All organizations | Name, category, description |
+| `event` | Upcoming events | Title, description, host organization, location |
+
+Each type gets its own in-memory `faiss.IndexFlatIP` (exact inner-product search). Separate indexes keep result groups clean and let each page search only what it needs (`?type=listing`, for example).
+
+### Keeping indexes fresh
+
+The first version needed a manual `build_product_index` command and a server restart after every change. Now:
+
+- `signals.py` listens for saves and deletes on every model that feeds an index. That includes indirect ones: editing an account's major changes tutor text, and changing a tutor's courses fires `m2m_changed`.
+- A signal only marks the affected index as stale. The next search rebuilds it.
+- At campus scale (hundreds of rows per type), a full rebuild takes about a second or less on a laptop CPU, so incremental updates aren't needed yet.
+
+### Search API
+
+```
+GET /api/search?q=<text>&type=all|listing|tutor|organization|event&k=8&min_score=0.2
+```
+
+Returns `{"query": ..., "results": {"tutor": [...], "listing": [...], ...}}`. Each item uses the same shape as its regular endpoint, plus a `score`.
+
+- `k` (default 8, max 50) is the number of results per type.
+- `min_score` (default `SEARCH_MIN_SCORE` = 0.2) drops weak matches.
+
+### Tutor matching
+
+`src/backend/matching.py` ranks active tutors for a help request:
+
+```
+score = 0.60 × semantic similarity(request text, tutor text)
+      + 0.25 × course match        (1 if the tutor lists the requested course)
+      + 0.15 × availability overlap (share of the student's free slots the tutor also has)
+```
+
+- Request text combines the course, title, description, and subject area.
+- Students are never matched with themselves, and inactive tutors are skipped.
+- Matches under 0.25 are dropped, and the top 5 are saved as `TutorMatch` rows with human-readable reasons, such as "Tutors MATH 131", "Profile closely matches what you described", and "Available Mon evening, Wed evening".
+- Accepting a match marks the request as matched and opens a conversation with the tutor.
+
+With the demo data, each sample request ranks the expected tutor first, with scores between 0.68 and 0.77.
+
+## Lessons learned
+
+These came from the original product search and still shape the design.
+
+**Identical results for every query.** The first endpoint returned `k=20` results from a catalog of about 20 products, so every search returned the whole catalog. The fix was a smaller `k` and a minimum similarity threshold.
+
+**Thin text gives weak matches.** Many listings had empty descriptions, and embedding only the title gave poor results. Combining several fields (category, condition, and so on) gives the model enough context. Tutor text follows the same idea.
+
+**Bigger models aren't automatically better.** `BAAI/bge-m3` was tried first and underperformed for short, dense-only queries while being much larger and slower. MiniLM was the better fit.
+
+**Thresholds depend on the queries.** Casual student phrasing like "calc" scores lower than formal text. "help with calc derivatives" against the Calculus tutor scores about 0.29 cosine similarity, while unrelated tutors score about 0.11. The default threshold was lowered from 0.35 to 0.2 so slang still finds the right results.
+
+## Trying it
+
 ```bash
-pip install sentence-transformers faiss-cpu numpy
+cd src
+python manage.py seed_demo
+python manage.py build_search_index --query "help with calc derivatives"
+python manage.py build_search_index --type listing --query "something to keep drinks cold in my dorm"
 ```
 
-### 2. Management Command for Index Building
-Created `backend/management/commands/build_product_index.py`:
-- Loads all `Listing` objects from the database
-- Combines product information (title, description, category, color, price, seller) into searchable text
-- Generates embeddings using the sentence-transformer model
-- Creates a FAISS index with normalized vectors for cosine similarity
-- Saves index files to `backend/search_index/`:
-  - `product_index.faiss`: The FAISS index
-  - `product_ids.npy`: Mapping from index positions to product IDs
-  - `metadata.json`: Model name and product count
+`build_search_index` prints the top results and their scores for each type, which is handy when tuning thresholds.
 
-### 3. Index Loading at Startup
-Created `backend/search.py`:
-- Loads the FAISS index and embedding model when Django starts
-- Provides helper functions for checking if search is ready
-- Stores index, product IDs, and model as module-level variables
+The backend tests in `src/backend/tests.py` swap in a tiny bag-of-words encoder (`search.set_encoder`), so they run offline without downloading the model.
 
-### 4. Search API Endpoint
-Added `semantic_search` view in `backend/views.py`:
-- Accepts GET requests with `q` query parameter
-- Validates that search index is loaded
-- Encodes the query text into an embedding
-- Performs similarity search using FAISS
-- Filters results by minimum similarity score (default: 0.35)
-- Returns top-k results (default: 8) in the same format as `/listing`
-- Falls back gracefully if index isn't available
+## Next steps
 
-### 5. Frontend Integration
-Updated `client/src/Listing.tsx`:
-- Added debounced search effect (300ms delay)
-- Calls `/search?q=...` when search term exists
-- Falls back to `/listing` when search box is empty
-- Maintains existing color filter and sorting functionality
-- Shows loading state during search requests
-
-### 6. URL Routing
-Added route in `server/urls.py`:
-```python
-path("search", semantic_search, name="search")
-```
-
-## Problems and Challenges Faced
-
-### Challenge 1: Initial Search Results Were Identical for All Queries
-**Problem**: Every search query returned the same set of products, regardless of the search term.
-
-**Root Cause**: The search endpoint was returning too many results (k=20), which happened to match the total number of products in the database. This made it appear as if search wasn't working.
-
-**Solution**: 
-- Reduced default `k` from 20 to 8
-- Added a minimum similarity score threshold (0.35) to filter out irrelevant results
-- Made both parameters configurable via query string
-
-### Challenge 2: Poor Search Quality with Minimal Product Descriptions
-**Problem**: Search results were not semantically meaningful because many products had empty or very short descriptions.
-
-**Root Cause**: The embedding model only had product titles to work with, which provided insufficient context for semantic understanding.
-
-**Solution**: Enhanced the text used for embeddings by combining multiple product attributes:
-- Title
-- Description
-- Category name
-- Color
-- Price
-- Seller name
-
-This gave the embedding model much richer context, even for products with minimal descriptions.
-
-### Challenge 3: Model Selection - BGE-M3 Underperformance
-**Problem**: Initially tried using `BAAI/bge-m3`, a more advanced multilingual model, but it didn't perform well for this use case.
-
-**Root Cause**: BGE-M3 is designed for different tasks and may require special handling for dense-only similarity search. It's also larger and slower.
-
-**Solution**: Switched back to `sentence-transformers/all-MiniLM-L6-v2`, which:
-- Is optimized for semantic similarity tasks
-- Is faster and lighter
-- Works well out-of-the-box with FAISS
-- Provides good results for product search
-
-### Challenge 4: Index Synchronization
-**Problem**: Need to keep the FAISS index synchronized with database changes.
-
-**Solution**: Implemented a manual rebuild process:
-- Run `python manage.py build_product_index` whenever products are added/edited
-- Restart Django server to reload the new index
-- This approach is simple and sufficient for the current scale
-
-## Current Workflow
-
-### Adding/Updating Products
-1. Add or edit products through the Django admin or API
-2. Run: `python manage.py build_product_index`
-3. Restart Django server to load the new index
-
-### Using Semantic Search
-1. User types in the search box on the frontend
-2. After 300ms delay (debounce), frontend calls `/search?q=...`
-3. Backend encodes query, searches FAISS index
-4. Returns top 8 most similar products
-5. Frontend displays results with existing filters applied
-
-## File Structure
-
-```
-src/
-├── backend/
-│   ├── management/
-│   │   └── commands/
-│   │       ├── build_product_index.py  # Index building command
-│   │       └── seed_products.py        # Product seeding utility
-│   ├── search_index/                   # Generated index files
-│   │   ├── product_index.faiss
-│   │   ├── product_ids.npy
-│   │   └── metadata.json
-│   ├── search.py                       # Index loading utilities
-│   └── views.py                        # Search API endpoint
-└── server/
-    └── urls.py                         # URL routing
-
-client/
-└── src/
-    └── Listing.tsx                     # Frontend search integration
-```
-
-## API Endpoints
-
-### GET /search
-**Query Parameters**:
-- `q` (required): Search query string
-- `k` (optional): Number of results to return (default: 8)
-- `min_score` (optional): Minimum similarity score (default: 0.35)
-
-**Response**: JSON array of product objects (same format as `/listing`)
-
-**Example**:
-```
-GET /search?q=wireless headphones&k=5&min_score=0.4
-```
-
-## Next Steps and Future Improvements
-
-### Short-term Enhancements
-1. **Automatic Index Rebuilding**
-   - Add Django signals to automatically rebuild index when products are created/updated
-   - Or implement a background task that rebuilds periodically
-
-2. **Hybrid Search**
-   - Combine semantic search with keyword matching for better results
-   - Boost exact matches or partial keyword matches
-
-3. **Search Result Ranking**
-   - Include similarity scores in API response
-   - Allow frontend to display "relevance" indicators
-   - Consider additional factors (price, popularity, recency)
-
-4. **Query Expansion**
-   - Handle synonyms (e.g., "laptop" = "notebook")
-   - Handle typos using fuzzy matching
-   - Support multi-word queries better
-
-### Medium-term Improvements
-1. **Incremental Index Updates**
-   - Instead of full rebuild, add/remove individual products from index
-   - Faster updates for frequent changes
-
-2. **Multiple Embedding Models**
-   - Test different models for different product categories
-   - Use specialized models for electronics, fashion, etc.
-
-3. **Search Analytics**
-   - Track popular search queries
-   - Identify products with no matches
-   - Monitor search performance
-
-4. **Advanced Filtering**
-   - Apply filters (color, price range) before semantic search
-   - Or re-rank results based on filters
-
-### Long-term Considerations
-1. **Scalability**
-   - For large catalogs (10k+ products), consider:
-     - FAISS IndexIVFFlat for faster approximate search
-     - Distributed search across multiple servers
-     - Caching frequently searched queries
-
-2. **Personalization**
-   - User-specific search results based on browsing history
-   - Category preferences
-   - Past purchases
-
-3. **Multi-modal Search**
-   - Image-based search (find similar products by photo)
-   - Combine text and image embeddings
-
-4. **A/B Testing**
-   - Test different embedding models
-   - Test different similarity thresholds
-   - Measure user engagement with search results
-
-## Performance Considerations
-
-- **Index Building**: Takes ~1-2 seconds for 24 products
-- **Search Query**: <100ms per query (including embedding generation)
-- **Memory Usage**: ~50MB for model + index (24 products)
-- **Scalability**: Should handle 1000+ products efficiently with current setup
-
-## Maintenance
-
-### Regular Tasks
-- Rebuild index after bulk product imports
-- Monitor search query logs for issues
-- Update embedding model if better options become available
-- Review and adjust `min_score` threshold based on user feedback
-
-### Troubleshooting
-- If search returns no results: Lower `min_score` threshold
-- If search returns too many irrelevant results: Raise `min_score` threshold
-- If search is slow: Consider using IndexIVFFlat for larger datasets
-- If index won't load: Check that `build_product_index` was run successfully
-
-## Conclusion
-
-The semantic search implementation successfully transforms the marketplace from exact keyword matching to intelligent, meaning-based search. Users can now find products using natural language queries, making the platform more user-friendly and discoverable.
-
-The implementation is production-ready for small to medium-sized catalogs and can be scaled up with the improvements outlined above.
-
+- **Hybrid search:** add keyword matching (BM25) so exact course codes and names like "CHEM 231" always rank highly.
+- **Search analytics:** log queries that return nothing to find gaps, such as tutoring subjects with no tutors.
+- **Tune with pilot feedback:** adjust `SEARCH_MIN_SCORE` and the matching weights based on which matches students accept.
+- **Scale:** past roughly 10,000 items per type, switch to an approximate index like `IndexIVFFlat` and persist indexes to disk.
+- **Multi-modal search:** embed listing photos so students can search by image.

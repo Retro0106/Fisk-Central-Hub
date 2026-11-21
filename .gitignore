@@ -18,14 +18,12 @@ __pycache__/
 *.sublime-project
 *.sublime-workspace
 
-# Django migrations
-migrations/
-!*/migrations/__init__.py
-
 # Django stuff
 staticfiles/
 media/
+*.sqlite3
 *.sqlite3-journal
+src/backend/search_index/
 
 # VSCode
 .vscode/

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1200" height="560" fill="#ffffff"/>
+  <text x="30" y="38" font-size="22" font-weight="bold" fill="#0f172a">Flow 3: Tutor request</text>
+  <text x="30" y="62" font-size="13" fill="#64748b">Describe the problem in your own words, see ranked tutors with reasons, accept one to start chatting.</text>
+
+  <!-- Screen 1: Request form -->
+  <g transform="translate(30,85)">
+    <rect width="360" height="450" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+    <text x="12" y="-8" font-size="13" font-weight="bold" fill="#334155">1. Request help</text>
+    <rect x="16" y="16" width="150" height="18" fill="#94a3b8"/>
+    <text x="16" y="56" font-size="10" font-weight="bold">What do you need help with?</text>
+    <rect x="16" y="62" width="328" height="26" rx="4" fill="#fff" stroke="#334155"/><text x="24" y="79" font-size="10" fill="#64748b">"Help with calc derivatives before my exam"</text>
+    <text x="16" y="108" font-size="10" font-weight="bold">Course</text><text x="184" y="108" font-size="10" font-weight="bold">Subject area</text>
+    <rect x="16" y="114" width="160" height="24" rx="4" fill="#fff" stroke="#94a3b8"/><text x="24" y="130" font-size="10">MATH 131 Calculus I v</text>
+    <rect x="184" y="114" width="160" height="24" rx="4" fill="#fff" stroke="#94a3b8"/><text x="192" y="130" font-size="10" fill="#64748b">Math</text>
+    <text x="16" y="158" font-size="10" font-weight="bold">Details</text>
+    <rect x="16" y="164" width="328" height="70" rx="4" fill="#fff" stroke="#94a3b8"/>
+    <text x="16" y="254" font-size="10" font-weight="bold">When are you free?</text>
+    <g font-size="8" fill="#475569"><text x="60" y="270">M</text><text x="100" y="270">T</text><text x="140" y="270">W</text><text x="180" y="270">T</text><text x="220" y="270">F</text><text x="260" y="270">S</text><text x="300" y="270">S</text>
+    <text x="16" y="290">AM</text><text x="16" y="318">PM</text><text x="16" y="346">Eve</text></g>
+    <g fill="#fff" stroke="#94a3b8">
+      <rect x="50" y="278" width="30" height="20" rx="3"/><rect x="90" y="278" width="30" height="20" rx="3"/><rect x="130" y="278" width="30" height="20" rx="3"/><rect x="170" y="278" width="30" height="20" rx="3"/><rect x="210" y="278" width="30" height="20" rx="3"/><rect x="250" y="278" width="30" height="20" rx="3"/><rect x="290" y="278" width="30" height="20" rx="3"/>
+      <rect x="50" y="306" width="30" height="20" rx="3"/><rect x="90" y="306" width="30" height="20" rx="3"/><rect x="130" y="306" width="30" height="20" rx="3"/><rect x="170" y="306" width="30" height="20" rx="3"/><rect x="210" y="306" width="30" height="20" rx="3"/><rect x="250" y="306" width="30" height="20" rx="3"/><rect x="290" y="306" width="30" height="20" rx="3"/>
+      <rect x="90" y="334" width="30" height="20" rx="3"/><rect x="170" y="334" width="30" height="20" rx="3"/><rect x="210" y="334" width="30" height="20" rx="3"/><rect x="250" y="334" width="30" height="20" rx="3"/><rect x="290" y="334" width="30" height="20" rx="3"/>
+    </g>
+    <rect x="50" y="334" width="30" height="20" rx="3" fill="#fbbf24"/><rect x="130" y="334" width="30" height="20" rx="3" fill="#fbbf24"/>
+    <rect x="16" y="378" width="328" height="34" rx="5" fill="#fbbf24"/><text x="132" y="400" font-size="12">Find me a tutor</text>
+  </g>
+
+  <!-- Screen 2: Ranked matches -->
+  <g transform="translate(420,85)">
+    <rect width="360" height="450" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+    <text x="12" y="-8" font-size="13" font-weight="bold" fill="#334155">2. Ranked tutor matches</text>
+    <rect x="16" y="16" width="328" height="70" rx="6" fill="#fff" stroke="#94a3b8"/>
+    <rect x="26" y="26" width="200" height="12" fill="#94a3b8"/><text x="26" y="56" font-size="9" fill="#64748b">MATH 131 Calculus I</text>
+    <rect x="284" y="24" width="50" height="16" rx="3" fill="#fde68a"/><text x="292" y="36" font-size="9">open</text>
+    <text x="26" y="76" font-size="9" fill="#1d4ed8">Refresh matches | Mark as resolved</text>
+    <rect x="16" y="98" width="328" height="160" rx="6" fill="#fff" stroke="#334155" stroke-width="2"/>
+    <circle cx="44" cy="126" r="16" fill="#cbd5e1"/>
+    <text x="70" y="122" font-size="11" font-weight="bold">Tutor name</text><text x="70" y="138" font-size="9" fill="#64748b">Mathematics | Class of 2026</text>
+    <g font-size="8"><rect x="70" y="146" width="44" height="14" rx="3" fill="#dbeafe"/><text x="74" y="156">MATH 131</text><rect x="118" y="146" width="44" height="14" rx="3" fill="#dbeafe"/><text x="122" y="156">MATH 132</text></g>
+    <line x1="26" y1="174" x2="334" y2="174" stroke="#e2e8f0"/>
+    <g font-size="8"><rect x="26" y="182" width="50" height="16" rx="3" fill="#fde68a"/><text x="30" y="193">Best match</text>
+    <rect x="80" y="182" width="52" height="16" rx="3" fill="#dbeafe"/><text x="84" y="193">73% match</text>
+    <rect x="136" y="182" width="74" height="16" rx="3" fill="#e2e8f0"/><text x="140" y="193">Tutors MATH 131</text>
+    <rect x="214" y="182" width="110" height="16" rx="3" fill="#e2e8f0"/><text x="218" y="193">Available Mon, Wed evening</text></g>
+    <rect x="26" y="212" width="130" height="30" rx="5" fill="#fbbf24"/><text x="36" y="231" font-size="10">Accept and message</text>
+    <rect x="164" y="212" width="80" height="30" rx="5" fill="#fff" stroke="#334155"/><text x="180" y="231" font-size="10">Not a fit</text>
+    <rect x="16" y="268" width="328" height="120" rx="6" fill="#fff" stroke="#94a3b8"/>
+    <circle cx="44" cy="296" r="16" fill="#cbd5e1"/><text x="70" y="300" font-size="11">Next tutor...</text>
+    <text x="16" y="414" font-size="9" fill="#475569">Score = 60% meaning match + 25% course match + 15% shared times</text>
+  </g>
+
+  <!-- Screen 3: Chat + become a tutor -->
+  <g transform="translate(810,85)">
+    <rect width="360" height="450" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+    <text x="12" y="-8" font-size="13" font-weight="bold" fill="#334155">3. Chat with tutor / become a tutor</text>
+    <rect x="16" y="16" width="328" height="190" rx="6" fill="#fff" stroke="#94a3b8"/>
+    <circle cx="36" cy="38" r="10" fill="#cbd5e1"/><text x="52" y="42" font-size="11" font-weight="bold">Tutor name</text>
+    <rect x="28" y="62" width="160" height="26" rx="10" fill="#e2e8f0"/>
+    <rect x="160" y="96" width="172" height="26" rx="10" fill="#bfdbfe"/>
+    <rect x="28" y="164" width="250" height="28" rx="5" fill="#fff" stroke="#334155"/>
+    <text x="34" y="182" font-size="8" fill="#64748b">"Hi Amara! I'd love your help with ... When works?"</text>
+    <rect x="284" y="164" width="48" height="28" rx="5" fill="#1d4ed8"/><text x="294" y="182" font-size="10" fill="#fff">Send</text>
+    <text x="16" y="232" font-size="12" font-weight="bold">Become a tutor (separate page)</text>
+    <rect x="16" y="242" width="328" height="190" rx="6" fill="#fff" stroke="#94a3b8" stroke-dasharray="5 4"/>
+    <text x="26" y="262" font-size="10" font-weight="bold">Courses you can tutor</text>
+    <g font-size="8"><rect x="26" y="270" width="48" height="18" rx="3" fill="#1d4ed8"/><text x="30" y="282" fill="#fff">MATH 131</text><rect x="80" y="270" width="48" height="18" rx="3" fill="#e2e8f0"/><text x="84" y="282">CHEM 111</text><rect x="134" y="270" width="48" height="18" rx="3" fill="#e2e8f0"/><text x="138" y="282">CSCI 110</text></g>
+    <text x="26" y="308" font-size="10" font-weight="bold">Topics you're strong in</text>
+    <rect x="26" y="314" width="308" height="40" rx="4" fill="#fff" stroke="#cbd5e1"/>
+    <text x="26" y="372" font-size="10" font-weight="bold">Availability grid (same as request form)</text>
+    <rect x="26" y="388" width="140" height="28" rx="5" fill="#fbbf24"/><text x="50" y="406" font-size="10">Start tutoring</text>
+  </g>
+
+  <g stroke="#1d4ed8" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M392 300 L418 300"/><path d="M782 300 L808 300"/>
+  </g>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/></marker></defs>
+</svg>

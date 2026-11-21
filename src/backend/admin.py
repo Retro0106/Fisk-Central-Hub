@@ -1,24 +1,62 @@
 from django.contrib import admin
-from backend.models import Account,Category,Listing,HelpRequest,Conversation,Message
 from django.contrib.auth.admin import UserAdmin
 
-# Register your models here.
+from backend.models import (
+    Account,
+    Category,
+    Conversation,
+    Course,
+    Event,
+    HelpRequest,
+    Listing,
+    Membership,
+    Message,
+    Organization,
+    TutorMatch,
+    TutorProfile,
+)
 
 
-class AccountAdmin(UserAdmin): #CReating a custome admin class
-    list_display = ("email","username","date_joined","last_login","is_admin","is_staff") #Creating custom displays for each user
-    search_fields = ("email","username") #creating serach fields with secarch keys
-    readonly_fields =("date_joined","last_login") #fields that cannot be changed
+class AccountAdmin(UserAdmin):
+    list_display = ("email", "name", "major", "email_verified", "is_demo", "is_staff")
+    list_filter = ("email_verified", "is_demo")
+    search_fields = ("email", "username", "name")
+    readonly_fields = ("date_joined", "last_login")
+    ordering = ("email",)
+    filter_horizontal = ("courses_taken",)
+    fieldsets = (
+        (None, {"fields": ("email", "username", "name", "password")}),
+        ("Profile", {"fields": ("major", "class_year", "bio", "courses_taken")}),
+        ("Status", {"fields": ("email_verified", "is_active", "is_demo", "is_staff", "is_admin", "is_superuser")}),
+        ("Dates", {"fields": ("date_joined", "last_login")}),
+    )
+    add_fieldsets = ((None, {"fields": ("email", "username", "name", "password1", "password2")}),)
 
-    #mandatory for creating custom admin class
-    filter_horizontal =()
-    list_filter = ()
-    fieldsets = ()
+
+class MembershipInline(admin.TabularInline):
+    model = Membership
+    extra = 0
 
 
-admin.site.register(Account,AccountAdmin)
-admin.site.register(Category)
-admin.site.register(Listing)
-admin.site.register(HelpRequest)
-admin.site.register(Conversation)
-admin.site.register(Message)
+class EventInline(admin.TabularInline):
+    model = Event
+    extra = 0
+
+
+@admin.register(Organization)
+class OrganizationAdmin(admin.ModelAdmin):
+    list_display = ("name", "category", "is_demo")
+    list_filter = ("category", "is_demo")
+    prepopulated_fields = {"slug": ("name",)}
+    inlines = [MembershipInline, EventInline]
+
+
+@admin.register(TutorProfile)
+class TutorProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "is_active")
+    filter_horizontal = ("courses",)
+
+
+admin.site.register(Account, AccountAdmin)
+for model in (Category, Course, Listing, HelpRequest, TutorMatch, Event, Conversation, Message):
+    admin.site.register(model)
