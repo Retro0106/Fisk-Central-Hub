@@ -51,8 +51,8 @@ flowchart LR
 - An internet connection for the first setup. `pip install` downloads PyTorch as part of sentence-transformers (about 1 GB on some platforms), and the embedding model (about 90 MB) downloads the first time search or `seed_demo` runs. After that, everything works offline.
 
 ```bash
-git clone https://github.com/Retro0106/Fisk-marketplace.git
-cd Fisk-marketplace
+git clone https://github.com/Retro0106/Fisk-Central-Hub.git
+cd Fisk-Central-Hub
 ```
 
 ### 1. Backend
